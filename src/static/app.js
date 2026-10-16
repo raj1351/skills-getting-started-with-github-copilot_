@@ -52,7 +52,76 @@ document.addEventListener("DOMContentLoaded", () => {
           const participantsList = document.createElement("ul");
           details.participants.forEach((participant) => {
             const participantItem = document.createElement("li");
-            participantItem.textContent = participant;
+            participantItem.className = "participant-item";
+
+            const participantEmail = document.createElement("span");
+            participantEmail.textContent = participant;
+            participantItem.appendChild(participantEmail);
+
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "remove-participant-btn";
+            removeButton.setAttribute(
+              "aria-label",
+              `Remove ${participant} from ${name}`
+            );
+            removeButton.title = "Remove participant";
+
+            const deleteIcon = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "svg"
+            );
+            deleteIcon.setAttribute("viewBox", "0 0 24 24");
+            deleteIcon.setAttribute("width", "18");
+            deleteIcon.setAttribute("height", "18");
+            deleteIcon.setAttribute("aria-hidden", "true");
+            deleteIcon.setAttribute("focusable", "false");
+
+            const deletePath = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            deletePath.setAttribute(
+              "d",
+              "M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"
+            );
+            deletePath.setAttribute("fill", "none");
+            deletePath.setAttribute("stroke", "currentColor");
+            deletePath.setAttribute("stroke-linecap", "round");
+            deletePath.setAttribute("stroke-linejoin", "round");
+            deletePath.setAttribute("stroke-width", "2");
+            deleteIcon.appendChild(deletePath);
+            removeButton.appendChild(deleteIcon);
+
+            removeButton.addEventListener("click", async () => {
+              removeButton.disabled = true;
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/participants?email=${encodeURIComponent(participant)}`,
+                  { method: "DELETE" }
+                );
+                const result = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(result.detail || "Could not remove participant");
+                }
+
+                messageDiv.textContent = result.message;
+                messageDiv.className = "success";
+                messageDiv.classList.remove("hidden");
+                await fetchActivities();
+              } catch (error) {
+                messageDiv.textContent =
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to remove participant. Please try again.";
+                messageDiv.className = "error";
+                messageDiv.classList.remove("hidden");
+                console.error("Error removing participant:", error);
+              }
+            });
+
+            participantItem.appendChild(removeButton);
             participantsList.appendChild(participantItem);
           });
           participantsSection.appendChild(participantsList);
